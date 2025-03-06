@@ -1,0 +1,17 @@
+{
+  "name": "file-converter",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "nextjs",
+    "backend"
+  ],
+  "scripts": {
+    "backend": "cd backend && yarn dev",
+    "frontend": "cd nextjs && yarn dev",
+    "engine": "concurrently \"yarn backend\" \"yarn frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
