@@ -7,9 +7,13 @@
     "backend"
   ],
   "scripts": {
-    "backend": "cd backend && yarn dev",
+    "backend": "cd backend && yarn start",
     "frontend": "cd nextjs && yarn dev",
-    "engine": "concurrently \"yarn backend\" \"yarn frontend\""
+    "engine": "concurrently \"yarn backend\" \"yarn frontend\"",
+    "dev": "cd nextjs && dev --turbopack",
+    "build": "cd nextjs && next build",
+    "start": "cd nextjs && next start",
+    "lint": "cd nextjs && next lint"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

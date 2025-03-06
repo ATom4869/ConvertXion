@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "CommonJS",
+    "outDir": "./dist", // Output compiled JS files here
+    "rootDir": "./", // Set root to backend folder
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["server.ts", "routes/**/*.ts", "convert.ts"],
+  "exclude": ["node_modules", "dist"]
+}
