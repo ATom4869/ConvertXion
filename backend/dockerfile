@@ -1,0 +1,35 @@
+# =====================
+# Builder stage
+# =====================
+FROM node:20-slim AS builder
+
+WORKDIR /backend
+
+COPY package.json yarn.lock ./
+
+# Install deps (with dev deps)
+RUN yarn install --frozen-lockfile
+
+COPY . .
+
+# Build TS → dist/
+RUN yarn build
+
+# =====================
+# Runtime stage
+# =====================
+FROM node:20-slim
+
+WORKDIR /backend
+
+COPY package.json yarn.lock ./
+
+# Install ONLY production deps
+RUN yarn install --production --frozen-lockfile
+
+# Copy built output only
+COPY --from=builder /backend/dist ./dist
+
+EXPOSE 5000
+
+CMD ["node", "dist/server.js"]

@@ -1,4 +1,28 @@
 node_modules
-/\ndist/\n.env
+dist
+.env
 
 .vercel
+.next
+
+# Yarn
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.pnp.*
+
+# Rust analyzer
+.rust-analyzer/
+
+# Rust build artifacts
+target/
+
+# vcpkg
+vcpkg/
+
+# Logs
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db

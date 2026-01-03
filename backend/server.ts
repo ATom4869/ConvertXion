@@ -1,21 +1,31 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
-import convertRouter from "./routes/convert";
+import convertRoutes from "./routes/convert";
+import multer from "multer";
 
-dotenv.config();
 const app = express();
+const PORT = 5000;
 
-// Middleware
-app.use(cors());
+// Enable CORS (Adjust as needed for security)
+app.use(cors({ origin: "*" })); // ✅ Allows all origins (change for production)
+
+// Ensure Express can handle JSON and FormData
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use("/convert", convertRouter);
+// Multer setup for handling file uploads
+const upload = multer({ dest: "uploads/" });
 
-// Start Server
-const PORT = process.env.PORT || 5000;
+// Use convert routes for processing images
+app.use("/", convertRoutes);
+
+// Global Error Handling Middleware
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error("🔥 Server Error:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+});
+
+// Start the Express server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
