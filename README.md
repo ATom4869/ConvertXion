@@ -13,7 +13,7 @@
 
 ## Requirements
 
-- Node (v16+ recommended)
+- Node (v20+ recommended)
 - Yarn v4 (project uses Yarn Modern Workspaces)
 - Rust toolchain (stable) and Cargo
 - Optional: Docker (for `rust-backend` via `docker-compose`)
@@ -39,7 +39,8 @@
    ```
 4. Run the Rust engine (multi-file):
    ```bash
-   cd rust-backend && cargo run    # or use docker-compose up in rust-backend/
+   yarn engine    # runs `cd rust-backend && cargo run RUST_BACKTRACE=1` per package.json
+   # or run directly: cd rust-backend && cargo run
    ```
 5. Build steps:
    ```bash
