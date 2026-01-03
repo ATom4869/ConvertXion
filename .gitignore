@@ -62,6 +62,9 @@ lcov-report/
 *.swp
 *~
 
+# Backups (local repo maintenance)
+backups/
+
 # Build artifacts
 dist/
 build/
