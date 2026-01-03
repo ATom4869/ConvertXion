@@ -26,27 +26,31 @@
    corepack prepare yarn@4.7.0 --activate
    yarn install
    ```
-2. Start full stack (frontend + node backend):
+2. Start the full stack (frontend + Node backend):
    ```bash
-   yarn start
-   # - frontend: http://localhost:3000
-   # - node backend: http://localhost:5000
+   yarn start    # runs both services via concurrently
+   # - backend: `yarn backend` (runs `cd backend && yarn start`)
+   # - frontend: `yarn frontend` (runs `cd nextjs && yarn dev`)
+   # Frontend: http://localhost:3000
+   # Node backend: http://localhost:5000
    ```
-3. Run only frontend or backend during development:
+3. Run services individually:
    ```bash
-   cd nextjs && yarn dev
-   cd backend && yarn dev        # ts-node-dev
+   yarn frontend   # runs `cd nextjs && yarn dev`
+   yarn backend    # runs `cd backend && yarn start`
+   yarn engine     # runs `cd rust-backend && cargo run RUST_BACKTRACE=1`
    ```
-4. Run the Rust engine (multi-file):
+
+- Alternative / helper scripts (root):
+  - `yarn dev` — run frontend dev only (alias for `cd nextjs && yarn dev --clear`)
+  - `yarn node-build`— build the Node backend (runs `cd backend && yarn build`)
+  - `yarn rbuild` — build the Rust engine (runs `cd rust-backend && cargo build`)
+
+4. Build steps:
    ```bash
-   yarn engine    # runs `cd rust-backend && cargo run RUST_BACKTRACE=1` per package.json
-   # or run directly: cd rust-backend && cargo run
-   ```
-5. Build steps:
-   ```bash
-   yarn build                   # build Next.js
-   cd backend && yarn build     # tsc → dist
-   cd rust-backend && cargo build
+   yarn build        # build Next.js
+   yarn node-build   # build backend TypeScript to dist
+   yarn rbuild       # build Rust engine
    ```
 
 ## Useful endpoints & examples
