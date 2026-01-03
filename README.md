@@ -7,9 +7,9 @@
 - Frontend: Next.js app at `nextjs/` (UI & upload logic). Key file: `nextjs/src/app/components/FileUpload.tsx`.
 - Single-file service: Node + Express at `backend/` (port 5000). Key file: `backend/routes/convert.ts` — uses Sharp and Jimp; Multer uses memory storage and `.ppm` is handled specially.
 - Multi-file service: Rust engine at `rust-backend/` (port 5100). Key files: `rust-backend/src/handlers.rs`, `rust-backend/src/image_utils.rs`, `rust-backend/src/ws_handler.rs`.
-- Communication:
-  - Frontend → Node (single): POST `http://localhost:5000/convert` (form file `image`)
-  - Frontend → Rust (multi): POST `http://localhost:5100/api/convert?session_id=...` (multipart form, files named `file`) and WebSocket `ws://localhost:5100/api/ws?session_id=...` for progress.
+- Backend endpoints:
+  - Backend (single — Node): POST `http://localhost:5000/convert` (form field `image`)
+  - Backend (multi — Rust): POST `http://localhost:5100/api/convert?session_id=...` (multipart form, files named `file`) and WebSocket `ws://localhost:5100/api/ws?session_id=...` for progress.
 
 ## Requirements
 
