@@ -97,5 +97,3 @@
 - Rust multi-file conversion: `rust-backend/src/{handlers.rs,image_utils.rs,ws_handler.rs}`
 
 ---
-
-If you'd like, I can also add a short `CONTRIBUTING.md` with PR guidelines and tests to this repo — would you like that?
