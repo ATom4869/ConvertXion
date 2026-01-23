@@ -1,4 +1,3 @@
-use crate::image_utils::rgb::bytemuck;
 use crate::ws_handler::{MyWebSocket, ProgressMessage};
 use actix::Addr;
 use futures::future::join_all;
@@ -226,7 +225,7 @@ pub async fn process_images(
 
     info!("🔧 Using {} processing threads", desired_threads);
 
-    // ✅ Initial beautiful console log
+    // Initial beautiful console log
     info!("=========================================");
     info!("📂 Total files to process: {}", total_files);
     for (filename, _) in &files {

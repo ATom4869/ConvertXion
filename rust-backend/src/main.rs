@@ -18,10 +18,8 @@ mod ws_handler;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // ✅ Load environment variables from .env file
-    dotenv().ok(); // ✅ Call it directly here once
+    dotenv().ok();
 
-    // ✅ Initialize logger
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let progress_channels: ProgressChannels = Arc::new(Mutex::new(HashMap::new()));
