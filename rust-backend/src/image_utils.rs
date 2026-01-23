@@ -8,7 +8,6 @@ use log::error;
 use log::{debug, info};
 use mozjpeg::{ColorSpace, Compress};
 use num_cpus;
-use ravif::Encoder as AvifEncoder;
 use rgb;
 use std::io::Cursor;
 use std::io::Write;
@@ -165,33 +164,6 @@ pub fn convert_image(
                 Box::new(e) as Box<dyn std::error::Error + Send>
             })?;
         }
-        "avif" => {
-            debug!("Converting to AVIF with quality: {}", quality);
-
-            let rgba = img.to_rgba8(); // Convert to RGBA
-
-            // Full-core encoder
-            let encoder = AvifEncoder::new()
-                .with_quality(quality as f32)
-                .with_speed(compression)
-                .with_num_threads(Some(num_cpus::get_physical())); // pakai semua core fisik
-
-            // Convert pixel data
-            let pixels: &[rgb::RGBA8] = bytemuck::cast_slice(rgba.as_raw());
-            let img_data = ravif::Img::new(pixels, img.width() as usize, img.height() as usize);
-
-            // Encode
-            let encoded = encoder.encode_rgba(img_data).map_err(|e| {
-                debug!("Error encoding AVIF: {}", e);
-                Box::new(e) as Box<dyn std::error::Error + Send>
-            })?;
-
-            // Write output
-            output.write_all(&encoded.avif_file).map_err(|e| {
-                debug!("Error writing AVIF data: {}", e);
-                Box::new(e) as Box<dyn std::error::Error + Send>
-            })?;
-        }
         "webp" => {
             debug!("Converting to WebP with quality: {}", quality);
             let encoder = WebpEncoder::from_image(&img).map_err(|e| {
@@ -299,84 +271,59 @@ pub async fn process_images(
 
     // Prepare output storage
     let mut results: Vec<(String, Vec<u8>)> = Vec::new();
+    // Parallel processing using Tokio with memory limit
+    let semaphore = Arc::new(Semaphore::new(desired_threads));
+    // Use MAX_MEMORY_PER_FILE to calculate total memory limit
+    let memory_semaphore = Arc::new(Semaphore::new(MAX_MEMORY_PER_FILE * desired_threads));
+    let session_id = Arc::new(session_id);
+    let progress_channels = Arc::clone(&progress_channels);
+    let settings = Arc::new(settings);
 
-    // Handle AVIF sequentially, others concurrently with CPU limit
-    if settings.format == "avif" {
-        // ➡️ Sequential AVIF processing
-        for (index, (filename, data)) in files.into_iter().enumerate() {
-            let start_file = Instant::now();
+    let tasks: Vec<_> = files
+        .into_iter()
+        .enumerate()
+        .map(|(index, (filename, data))| {
+            let permit = semaphore.clone().acquire_owned();
+            let mem_permit = memory_semaphore
+                .clone()
+                .acquire_many_owned(data.len() as u32);
+            let session_id = session_id.clone();
+            let progress_channels = progress_channels.clone();
+            let settings = settings.clone();
 
-            let (new_filename, converted_data) = process_single_image(
-                filename,
-                data,
-                &settings,
-                &session_id,
-                &progress_channels,
-                index,
-                total_files,
-                progress_per_file,
-            )?;
+            tokio::spawn(async move {
+                let _permit = permit.await;
+                let _mem_permit = mem_permit.await;
+                let start_file = Instant::now();
 
-            let duration_file = start_file.elapsed();
-            info!("⏱️ Processed '{}' in {:.2?}", new_filename, duration_file);
-
-            results.push((new_filename, converted_data));
-        }
-    } else {
-        // Parallel processing using Tokio with memory limit
-        let semaphore = Arc::new(Semaphore::new(desired_threads));
-        // Use MAX_MEMORY_PER_FILE to calculate total memory limit
-        let memory_semaphore = Arc::new(Semaphore::new(MAX_MEMORY_PER_FILE * desired_threads));
-        let session_id = Arc::new(session_id);
-        let progress_channels = Arc::clone(&progress_channels);
-        let settings = Arc::new(settings);
-
-        let tasks: Vec<_> = files
-            .into_iter()
-            .enumerate()
-            .map(|(index, (filename, data))| {
-                let permit = semaphore.clone().acquire_owned();
-                let mem_permit = memory_semaphore
-                    .clone()
-                    .acquire_many_owned(data.len() as u32);
-                let session_id = session_id.clone();
-                let progress_channels = progress_channels.clone();
-                let settings = settings.clone();
-
-                tokio::spawn(async move {
-                    let _permit = permit.await;
-                    let _mem_permit = mem_permit.await;
-                    let start_file = Instant::now();
-
-                    let result = tokio::task::spawn_blocking(move || {
-                        process_single_image(
-                            filename,
-                            data,
-                            &settings,
-                            &session_id,
-                            &progress_channels,
-                            index,
-                            total_files,
-                            progress_per_file,
-                        )
-                    })
-                    .await
-                    .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send>)??;
-
-                    // Memory permit is automatically released here when _mem_permit goes out of scope
-                    let (new_filename, converted_data) = result;
-                    let duration_file = start_file.elapsed();
-                    info!("⏱️ Processed '{}' in {:.2?}", new_filename, duration_file);
-
-                    Ok::<_, Box<dyn std::error::Error + Send>>((new_filename, converted_data))
+                let result = tokio::task::spawn_blocking(move || {
+                    process_single_image(
+                        filename,
+                        data,
+                        &settings,
+                        &session_id,
+                        &progress_channels,
+                        index,
+                        total_files,
+                        progress_per_file,
+                    )
                 })
-            })
-            .collect();
+                .await
+                .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send>)??;
 
-        let results_temp = join_all(tasks).await;
-        for res in results_temp {
-            results.push(res.map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send>)??);
-        }
+                // Memory permit is automatically released here when _mem_permit goes out of scope
+                let (new_filename, converted_data) = result;
+                let duration_file = start_file.elapsed();
+                info!("⏱️ Processed '{}' in {:.2?}", new_filename, duration_file);
+
+                Ok::<_, Box<dyn std::error::Error + Send>>((new_filename, converted_data))
+            })
+        })
+        .collect();
+
+    let results_temp = join_all(tasks).await;
+    for res in results_temp {
+        results.push(res.map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send>)??);
     }
 
     // Final ZIP creation
@@ -446,8 +393,7 @@ fn process_single_image(
             .trim_end_matches(".jpg")
             .trim_end_matches(".jpeg")
             .trim_end_matches(".webp")
-            .trim_end_matches(".bmp")
-            .trim_end_matches(".avif"),
+            .trim_end_matches(".bmp"),
         settings.format
     );
 
