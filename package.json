@@ -12,7 +12,7 @@
     "start": "concurrently \"yarn backend\" \"yarn frontend\"",
     "engine": "cd rust-backend && cargo run RUST_BACKTRACE=1",
     "cleanup": "cd rust-backend && cargo clean",
-    "rbuild": "cd rust-backend && cargo build",
+    "rbuild": "cd rust-backend && cargo build --release -j 4",
     "radd": "cd rust-backend && cargo add",
     "dev": "cd nextjs && yarn dev --clear",
     "build": "cd nextjs && next build",
