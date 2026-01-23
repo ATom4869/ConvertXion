@@ -7,7 +7,6 @@ use log::error;
 use log::{debug, info};
 use mozjpeg::{ColorSpace, Compress};
 use num_cpus;
-use rgb;
 use std::io::Cursor;
 use std::io::Write;
 use std::sync::{Arc, Mutex};
